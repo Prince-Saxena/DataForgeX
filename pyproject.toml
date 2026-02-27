@@ -16,8 +16,10 @@ classifiers = [
     "Programming Language :: Python :: 3.9",
     "License :: OSI Approved :: MIT License",
     "Operating System :: OS Independent",
-    "Intended Audience :: AIML/Science/Research",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence :: Machine Learning"
+    "Intended Audience :: Data Analysts",
+    "Intended Audience :: Data Scientist",
+    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence"
 ]
 
 dependencies = [
