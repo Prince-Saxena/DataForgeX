@@ -3,8 +3,8 @@ requires = ["setuptools>=68", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "dfx"
-version = "0.1.1"
+name = "dataforgex"
+version = "0.1.2"
 description = "DataForgeX: Prep • Plot • Evaluate • Detect"
 readme = "README.md"
 requires-python = ">=3.9"
