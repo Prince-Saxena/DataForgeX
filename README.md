@@ -292,7 +292,22 @@ Contributions are welcome.
 DataForgeX lets you focus on logic, not boilerplate.
 
 ---
+## Authors and Contributors
 
+### Author and Lead Developer
+**Prince Saxena**  
+Creator and primary developer of DataForgeX.  
+Responsible for the design, architecture, and implementation of the library.
+
+### Contributors
+The development of DataForgeX benefited from valuable collaboration and input from:
+
+- **Mohd Saad Sherwani** — Conceptual discussions and feature ideation  
+- **Hammad Rafeeque** — Testing, feedback, and usability evaluation  
+
+Their support and insights helped refine the direction and usability of the project.
+
+---
 
 # 📜 License
 
