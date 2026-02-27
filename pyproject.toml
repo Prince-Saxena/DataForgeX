@@ -1,0 +1,40 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dfx"
+version = "0.1.0"
+description = "DataForgeX: Prep • Plot • Evaluate • Detect"
+readme = "README.md"
+requires-python = ">=3.9"
+license = { text = "MIT" }
+authors = [{ name = "Prince Saxena" }]
+keywords = ["data preprocessing", "machine learning", "data cleaning", "eda", "automation"]
+classifiers = [
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.9",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Intended Audience :: AIML/Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence :: Machine Learning"
+]
+
+dependencies = [
+    "pandas>=1.5",
+    "numpy>=1.23",
+    "scikit-learn>=1.2",
+    "matplotlib>=3.6"
+]
+
+[project.optional-dependencies]
+ml = ["xgboost>=1.7"]
+docs = ["mkdocs", "mkdocs-material", "mkdocstrings[python]"]
+dev = ["pytest", "black", "ruff", "mypy"]
+
+[project.urls]
+Homepage = "https://github.com/<your-user>/DataForgeX"
+Issues = "https://github.com/<your-user>/DataForgeX/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
