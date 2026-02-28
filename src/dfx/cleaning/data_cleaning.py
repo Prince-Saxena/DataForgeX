@@ -2,7 +2,7 @@ import pandas as pd
 import numpy as np
 
 
-def suggest_fill_strategy(df, skew_threshold=1.0, rare_category_threshold=0.05, high_missing_threshold=50.0):
+def suggest_fill_strategy(df, skew_threshold=1.0, rare_category_threshold=0.05, high_missing_threshold=50.0,high_missing_action="drop_column"):
     """
     Analyzes a DataFrame and suggests intelligent strategies for handling missing values in each column.
 
@@ -48,7 +48,7 @@ def suggest_fill_strategy(df, skew_threshold=1.0, rare_category_threshold=0.05, 
         
         # 1. Check for high missing percentage
         if null_pct > high_missing_threshold:
-            info["suggested_strategy"] = "drop_column"
+            info["suggested_strategy"] = high_missing_action
             info["rationale"] = f"Over {high_missing_threshold}% of data is missing"
             info["warning"] = "High data loss risk"
             suggestions[col] = info
@@ -193,6 +193,9 @@ def handle_missing_values(df, strategy_dict='auto', constant_value=None, inplace
             
         if strategy == 'drop_column':
             # Drop rows where this specific column is null
+            df.drop(subset=[col], inplace=True)
+
+        elif strategy == 'drop_rows':
             df.dropna(subset=[col], inplace=True)
             
         elif strategy == 'mean':

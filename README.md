@@ -2,112 +2,455 @@
 
 This document shows how **DataForgeX (DFX)** reduces long and repetitive
 data science code into **simple and readable one-liners**.
+___
 
 ---
 
-## 1. Handling Missing Values
+# 🚀 Quick Start
 
-### Without DataForgeX
+```python
+import pandas as pd
+from dfx import (
+    auto_fix_dtypes,
+    handle_missing_values,
+    auto_encode,
+    scale_data,
+    evaluate_classification
+)
 
-    import pandas as pd
+# Load data
+df = pd.read_csv("data.csv")
 
-    for col in df.columns:
-        if df[col].dtype == "object":
-            df[col] = df[col].fillna(df[col].mode()[0])
-        else:
-            df[col] = df[col].fillna(df[col].median())
+# Preprocess
+df = auto_fix_dtypes(df)
+df = handle_missing_values(df)
+df = auto_encode(df)
+df = scale_data(df)
 
-### With DataForgeX
+# Train model
+from sklearn.ensemble import RandomForestClassifier
 
-    from dfx import handle_missing_values
-    df = handle_missing_values(df)
+X = df.drop("target", axis=1)
+y = df["target"]
 
-Code reduced: ~10 lines → 1 line
+model = RandomForestClassifier().fit(X, y)
 
----
-
-## 2. Fixing Data Types Automatically
-
-### Without DataForgeX
-
-    df["age"] = pd.to_numeric(df["age"], errors="coerce")
-    df["date"] = pd.to_datetime(df["date"], errors="coerce")
-    df["flag"] = df["flag"].map({"yes": 1, "no": 0})
-
-### With DataForgeX
-
-    from dfx import auto_fix_dtypes
-    df = auto_fix_dtypes(df)
-
----
-
-## 4. Outlier Handling
-
-### Without DataForgeX
-
-    Q1 = df["chol"].quantile(0.25)
-    Q3 = df["chol"].quantile(0.75)
-    IQR = Q3 - Q1
-
-    df = df[
-        (df["chol"] >= Q1 - 1.5 * IQR) &
-        (df["chol"] <= Q3 + 1.5 * IQR)
-    ]
-
-### With DataForgeX
-
-    from dfx import remove_outliers
-    df = remove_outliers(df)
+# Evaluate
+evaluate_classification(model, X, y)
+```
 
 ---
 
-## 5. Encoding Categorical Features
+## Data Cleaning Module
+Utilities to analyze and handle missing values in pandas DataFrames using statistically informed strategies. Supports automatic recommendations and per-column cleaning policies.
 
-### Without DataForgeX
+## Overview
+Functions: `suggest_fill_strategy()` analyzes missing data and recommends actions; `handle_missing_values()` applies strategies to a DataFrame.
 
-    from sklearn.preprocessing import LabelEncoder
+## suggest_fill_strategy
+**Purpose:** Evaluates columns with missing values and recommends strategies based on data type, skewness, categorical frequency, and missing percentage. Does not modify data.
 
-    le = LabelEncoder()
-    df["sex"] = le.fit_transform(df["sex"])
-    df = pd.get_dummies(df, columns=["cp"], drop_first=True)
+**Signature**
+```python
+suggest_fill_strategy(df, skew_threshold=1.0, rare_category_threshold=0.05, high_missing_threshold=50.0, high_missing_action="drop_column")
+```
 
-### With DataForgeX
+**Parameters**
+- **df:** Input pandas DataFrame.
+- **skew_threshold (float, default=1.0):** Numeric skewness boundary; skewness>threshold → median, else mean.
+- **rare_category_threshold (float, default=0.05):** Categorical frequency below which values are flagged rare.
+- **high_missing_threshold (float, default=50.0):** Missing % above which column is high-missing.
+- **high_missing_action ({"drop_column","drop_rows"}, default="drop_column"):** Action when missing % exceeds threshold.
 
-    from dfx import auto_encode
-    df = auto_encode(df)
+**Output:** DataFrame summarizing each column with missing values: `column_name, dtype, missing_count, missing_percent, suggested_strategy, suggested_value, rationale, warning`.
+
+**Example**
+```python
+suggestions = suggest_fill_strategy(df)
+```
+
+## handle_missing_values
+**Purpose:** Applies missing-value strategies to a DataFrame with automatic, global, or per-column configuration.
+
+**Signature**
+```python
+handle_missing_values(df, strategy_dict="auto", constant_value=None, inplace=False)
+```
+
+**Parameters**
+- **df:** Input DataFrame.
+- **strategy_dict ({"auto", str, dict}, default="auto"):** Cleaning mode. `"auto"` uses suggestions; `str` applies one strategy to all missing columns; `dict` maps column→strategy.
+- **constant_value (dict, optional):** Required for `"constant"` strategy; maps column→value.
+- **inplace (bool, default=False):** Modify original DataFrame if True, else return copy.
+
+**Supported Strategies:** mean (numeric mean), median (numeric median), mode (categorical most frequent), ffill (forward fill), bfill (backward fill), interpolate (numeric/datetime interpolation), constant (user value), drop_column (remove column), drop_rows (remove rows with missing).
+
+**Automatic Logic:** Numeric → median if skewed else mean; categorical → mode; datetime → interpolate; high missing → `high_missing_action`.
+
+## Recommended Workflow
+1. Analyze:
+```python
+suggestions = suggest_fill_strategy(df)
+```
+2. Adjust (optional):
+```python
+strategies = suggestions["suggested_strategy"].to_dict()
+strategies["price"] = "median"
+strategies["region_2"] = "drop_column"
+```
+3. Apply:
+```python
+df_clean = handle_missing_values(df, strategies)
+```
+
+## Best Practices
+Prefer dropping columns over rows for high-missing features; avoid row drops in large datasets unless necessary; inspect suggestions before applying; use median for skewed numeric data; keep categorical missing if meaningful.
+
+## Example
+```python
+suggestions = suggest_fill_strategy(df, high_missing_threshold=50, high_missing_action="drop_column")
+df_clean = handle_missing_values(df, suggestions["suggested_strategy"].to_dict())
+```
 
 ---
 
-## 6. Feature Scaling
 
-### Without DataForgeX
+## Preprocessing Module
+Provides automated data type correction, categorical encoding, outlier handling, scaling, and an end-to-end preprocessing pipeline for pandas DataFrames.
 
-    from sklearn.preprocessing import StandardScaler
+## Overview
+Functions: `auto_fix_dtypes()` infers and fixes column types; `auto_encode()` encodes categorical features; `detect_outliers()`, `remove_outliers()`, `cap_outliers()` manage outliers; `scale_data()` scales numeric features; `preprocess_pipeline()` runs a full preprocessing workflow.
 
-    scaler = StandardScaler()
-    df[cols] = scaler.fit_transform(df[cols])
+## auto_fix_dtypes
+**Purpose:** Automatically converts object columns to appropriate types (boolean, numeric, datetime, category, or cleaned string) using value patterns and thresholds.
 
-### With DataForgeX
+**Signature**
+```python
+auto_fix_dtypes(df, cat_threshold=0.05, date_threshold=0.6)
+```
 
-    from dfx import scale_data
-    df = scale_data(df)
+**Parameters**
+- **df:** Input DataFrame.
+- **cat_threshold (float, default=0.05):** Unique ratio ≤ threshold → convert to `category`.
+- **date_threshold (float, default=0.6):** Fraction convertible to datetime ≥ threshold → convert to datetime.
+
+**Logic:** Boolean → Numeric → Datetime → Category → Strip string.
+
+**Returns:** DataFrame with inferred dtypes.
 
 ---
 
-## 7. Model Evaluation
+## auto_encode
+**Purpose:** Encodes categorical/boolean columns using One-Hot or Label encoding with automatic selection.
 
-### Without DataForgeX
+**Signature**
+```python
+auto_encode(df, method="auto", onehot_threshold=10, drop_first=True)
+```
 
-    from sklearn.metrics import accuracy_score, classification_report
+**Parameters**
+- **df:** Input DataFrame.
+- **method ({"auto","onehot","label"}, default="auto"):** Encoding mode.
+- **onehot_threshold (int, default=10):** Unique values ≤ threshold → One-Hot in auto mode.
+- **drop_first (bool, default=True):** Drop first dummy to avoid multicollinearity.
 
-    y_pred = model.predict(X_test)
-    print(accuracy_score(y_test, y_pred))
-    print(classification_report(y_test, y_pred))
+**Auto Logic:** Unique ≤ threshold → One-Hot; else → Label.
 
-### With DataForgeX
+**Returns:** Encoded DataFrame.
 
-    from dfx import evaluate_classification
-    evaluate_classification(model, X_test, y_test)
+---
+
+## detect_outliers
+**Purpose:** Identifies numeric outliers using statistical or model-based methods.
+
+**Signature**
+```python
+detect_outliers(df, method="iqr", z_thresh=3.0, contamination=0.05)
+```
+
+**Parameters**
+- **df:** Input DataFrame.
+- **method ({"iqr","zscore","iforest"}, default="iqr"):** Detection algorithm.
+- **z_thresh (float, default=3.0):** Z-score cutoff.
+- **contamination (float, default=0.05):** Expected outlier fraction for IsolationForest.
+
+**Returns:** Boolean mask DataFrame (True = outlier).
+
+---
+
+## remove_outliers
+**Purpose:** Removes rows containing any detected outlier.
+
+**Signature**
+```python
+remove_outliers(df, method="iqr", z_thresh=3.0, contamination=0.05)
+```
+
+**Returns:** DataFrame with outlier rows removed.
+
+---
+
+## cap_outliers
+**Purpose:** Caps numeric values to outlier bounds instead of removing rows.
+
+**Signature**
+```python
+cap_outliers(df, method="iqr", z_thresh=3.0)
+```
+
+**Methods:**  
+- `iqr` → clip to Q1−1.5·IQR and Q3+1.5·IQR  
+- `zscore` → clip to mean ± z_thresh·std  
+
+**Returns:** DataFrame with capped values.
+
+---
+
+## scale_data
+**Purpose:** Scales numeric columns using sklearn scalers.
+
+**Signature**
+```python
+scale_data(df, method="standard", cols=None)
+```
+
+**Parameters**
+- **df:** Input DataFrame.
+- **method ({"standard","minmax","robust","normalize"}, default="standard"):** Scaling algorithm.
+- **cols (list or None):** Columns to scale; None → all numeric.
+
+**Returns:** Scaled DataFrame.
+
+---
+
+## preprocess_pipeline
+**Purpose:** Executes a full preprocessing workflow: dtype fixing → outlier handling → encoding → scaling.
+
+**Signature**
+```python
+preprocess_pipeline(
+    df,
+    encode=True,
+    encoding_method="auto",
+    handle_outliers="cap",
+    outlier_method="iqr",
+    scaling=True,
+    scaling_method="standard"
+)
+```
+
+**Parameters**
+- **df:** Input DataFrame.
+- **encode (bool, default=True):** Apply encoding.
+- **encoding_method ({"auto","onehot","label"}):** Encoding mode.
+- **handle_outliers ({"cap","remove",None}, default="cap"):** Outlier policy.
+- **outlier_method ({"iqr","zscore","iforest"}):** Detection method.
+- **scaling (bool, default=True):** Apply scaling.
+- **scaling_method ({"standard","minmax","robust","normalize"}):** Scaling algorithm.
+
+**Returns:** Fully preprocessed DataFrame.
+
+---
+
+## Recommended Workflow
+```python
+df = preprocess_pipeline(df)
+```
+
+Custom configuration:
+```python
+df = preprocess_pipeline(
+    df,
+    encoding_method="onehot",
+    handle_outliers="remove",
+    scaling_method="robust"
+)
+```
+
+---
+
+## Best Practices
+Run dtype fixing before encoding; prefer capping over removing outliers for small datasets; use robust scaling with heavy outliers; use One-Hot for low-cardinality features and Label for high-cardinality features; review automatic dtype inference on mixed-format columns.
+
+---
+
+
+## Model Evaluation Module
+Provides unified evaluation utilities for classification and regression models, including metrics, plots, cross-validation, and automatic model-type detection.
+
+## Overview
+Functions: `evaluate_classification()` computes classification metrics; `plot_confusion_matrix()` and `plot_roc_curve()` visualize classifier performance; `evaluate_regression()` and `plot_residuals()` evaluate regressors; `auto_cross_validate()` performs cross-validation; `evaluate_model()` auto-detects model type and runs appropriate evaluation; `plot_correlation()` visualizes numeric feature correlations.
+
+## evaluate_classification
+**Purpose:** Computes core classification metrics for a fitted model.
+
+**Signature**
+```python
+evaluate_classification(model, X_test, y_test, average="weighted")
+```
+
+**Parameters**
+- **model:** Fitted classifier with `predict()`.
+- **X_test:** Test features.
+- **y_test:** True labels.
+- **average (str, default="weighted"):** Averaging mode for precision/recall/F1 (`"macro"`, `"micro"`, `"weighted"`).
+
+**Metrics:** accuracy, precision, recall, F1.
+
+**Returns:** dict with metric values.
+
+---
+
+## plot_confusion_matrix
+**Purpose:** Displays confusion matrix heatmap for classifier predictions.
+
+**Signature**
+```python
+plot_confusion_matrix(model, X_test, y_test)
+```
+
+**Requirements:** Fitted classifier with `predict()`.
+
+---
+
+## plot_roc_curve
+**Purpose:** Plots ROC curve and AUC for binary classifiers.
+
+**Signature**
+```python
+plot_roc_curve(model, X_test, y_test)
+```
+
+**Requirements:** Model must implement `predict_proba()`; binary classification.
+
+---
+
+## evaluate_regression
+**Purpose:** Computes regression error metrics for a fitted model.
+
+**Signature**
+```python
+evaluate_regression(model, X_test, y_test)
+```
+
+**Metrics:** MAE, MSE, RMSE, R².
+
+**Returns:** dict with metric values.
+
+---
+
+## plot_residuals
+**Purpose:** Visualizes regression residual distribution.
+
+**Signature**
+```python
+plot_residuals(model, X_test, y_test)
+```
+
+**Plot:** predicted vs residuals with zero baseline.
+
+---
+
+## auto_cross_validate
+**Purpose:** Performs cross-validation scoring for any sklearn-compatible model.
+
+**Signature**
+```python
+auto_cross_validate(model, X, y, cv=5, scoring=None)
+```
+
+**Parameters**
+- **model:** Estimator.
+- **X, y:** Training data.
+- **cv (int, default=5):** Fold count.
+- **scoring (str or None):** sklearn scoring metric.
+
+**Returns:** dict with mean, std, and all fold scores.
+
+---
+
+## evaluate_model
+**Purpose:** Automatically detects model type and runs appropriate evaluation workflow.
+
+**Signature**
+```python
+evaluate_model(model, X_test, y_test)
+```
+
+**Logic:** classifier → classification metrics + confusion matrix; regressor → regression metrics + residual plot.
+
+---
+
+## plot_correlation
+**Purpose:** Plots correlation matrix for numeric DataFrame columns.
+
+**Signature**
+```python
+plot_correlation(
+    df,
+    method="pearson",
+    cmap="coolwarm",
+    figsize=(8, 6),
+    title="Correlation Matrix",
+    value_fontsize=8,
+    label_fontsize=9,
+    show_values=True
+)
+```
+
+**Parameters**
+- **df:** Input DataFrame.
+- **method ({"pearson","spearman","kendall"}):** Correlation type.
+- **cmap:** Matplotlib colormap.
+- **figsize:** Plot size.
+- **title:** Plot title.
+- **value_fontsize:** Cell text size.
+- **label_fontsize:** Axis label size.
+- **show_values (bool):** Overlay correlation values.
+
+**Returns:** correlation DataFrame.
+
+---
+
+## Internal Utilities
+- `_check_fitted(model)` ensures estimator is trained.
+- `_is_classifier(model)` detects classifier via sklearn attributes.
+
+---
+
+## Recommended Usage
+Classification:
+```python
+evaluate_classification(model, X_test, y_test)
+plot_confusion_matrix(model, X_test, y_test)
+plot_roc_curve(model, X_test, y_test)
+```
+
+Regression:
+```python
+evaluate_regression(model, X_test, y_test)
+plot_residuals(model, X_test, y_test)
+```
+
+Automatic:
+```python
+evaluate_model(model, X_test, y_test)
+```
+
+Cross-validation:
+```python
+auto_cross_validate(model, X, y, cv=5, scoring="r2")
+```
+
+Correlation:
+```python
+plot_correlation(df)
+```
+
+---
+
+## Best Practices
+Ensure models are fitted before evaluation; use ROC only for probabilistic binary classifiers; interpret weighted metrics for imbalanced datasets; prefer cross-validation metrics over single split; inspect residual plots for regression assumptions.
 
 ---
 
@@ -155,41 +498,6 @@ Install development tools:
 
 ```bash
 pip install dfx[dev]
-```
-
----
-
-# 🚀 Quick Start
-
-```python
-import pandas as pd
-from dfx import (
-    auto_fix_dtypes,
-    handle_missing_values,
-    auto_encode,
-    scale_data,
-    evaluate_classification
-)
-
-# Load data
-df = pd.read_csv("data.csv")
-
-# Preprocess
-df = auto_fix_dtypes(df)
-df = handle_missing_values(df)
-df = auto_encode(df)
-df = scale_data(df)
-
-# Train model
-from sklearn.ensemble import RandomForestClassifier
-
-X = df.drop("target", axis=1)
-y = df["target"]
-
-model = RandomForestClassifier().fit(X, y)
-
-# Evaluate
-evaluate_classification(model, X, y)
 ```
 
 ---

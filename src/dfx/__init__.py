@@ -1,22 +1,12 @@
-__version__ = "0.1.0"
+__version__ = "0.1.4"
 
+# Cleaning
 from .cleaning import (
     suggest_fill_strategy,
     handle_missing_values,
 )
-from .data_viz import (
-    plot_correlation_heatmap, 
-    plot_histograms, 
-    set_theme, 
-    get_theme_colors, 
-    apply_plot_style, 
-    list_themes,
-    plot_countplots, 
-    plot_boxplots,
-    plot_scatter,
-    _example_usage,
-    quick_eda
-)
+
+# Model Evaluation
 from .model_eval import (
     evaluate_model,
     evaluate_classification,
@@ -25,8 +15,10 @@ from .model_eval import (
     plot_roc_curve,
     plot_residuals,
     auto_cross_validate,
-    plot_correlation
+    plot_correlation,
 )
+
+# Preprocessing
 from .preprocessing import (
     detect_outliers,
     auto_encode,
@@ -37,8 +29,11 @@ from .preprocessing import (
 )
 
 __all__ = [
-    "data_cleaning",
-    "visualization",
+    # Cleaning
+    "suggest_fill_strategy",
+    "handle_missing_values",
+
+    # Evaluation
     "evaluate_model",
     "evaluate_classification",
     "evaluate_regression",
@@ -46,24 +41,13 @@ __all__ = [
     "plot_roc_curve",
     "plot_residuals",
     "auto_cross_validate",
-    "suggest_fill_strategy",
-    "handle_missing_values",
     "plot_correlation",
-    "plot_correlation_heatmap", 
-    "plot_histograms", 
-    "set_theme", 
-    "get_theme_colors", 
-    "apply_plot_style", 
-    "list_themes",
-    "plot_countplots", 
-    "plot_boxplots",
-    "plot_scatter",
-    "_example_usage",
-    "quick_eda",
+
+    # Preprocessing
     "detect_outliers",
     "auto_encode",
     "auto_fix_dtypes",
     "remove_outliers",
     "cap_outliers",
-    "scale_data"
+    "scale_data",
 ]
