@@ -193,7 +193,7 @@ def handle_missing_values(df, strategy_dict='auto', constant_value=None, inplace
             
         if strategy == 'drop_column':
             # Drop rows where this specific column is null
-            df.drop(subset=[col], inplace=True)
+            df.drop(columns=[col], inplace=True)
 
         elif strategy == 'drop_rows':
             df.dropna(subset=[col], inplace=True)

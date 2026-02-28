@@ -1,20 +1,20 @@
-# import pandas as pd
+import pandas as pd
 # from sklearn.linear_model import LogisticRegression
 # from sklearn.model_selection import train_test_split
-# from dfx import (
-#     evaluate_classification, 
-#     plot_confusion_matrix, 
-#     plot_residuals, 
-#     plot_correlation, 
-#     detect_outliers, 
-#     cap_outliers, 
-#     remove_outliers, 
-#     suggest_fill_strategy,
-#     handle_missing_values,
-#     plot_boxplots,
-#     plot_correlation_heatmap
-# )
-# df = pd.read_csv("sample_data/heart.csv") 
+from dfx import (
+    evaluate_classification, 
+    # plot_confusion_matrix, 
+    # plot_residuals, 
+    # plot_correlation, 
+    detect_outliers, 
+    cap_outliers, 
+    remove_outliers, 
+    suggest_fill_strategy,
+    handle_missing_values,
+    # plot_boxplots,
+    # plot_correlation_heatmap
+)
+df = pd.read_csv("sample_data/heart.csv") 
 
 ##################### Model Eval ########################
 
@@ -40,12 +40,12 @@
 
 
 #################### Cleaning #########################
-# data = pd.read_csv("sample_data/test_data.csv")
-# print(data)
-# print()
-# print(suggest_fill_strategy(data))
-# print()
-# print(handle_missing_values(data))
+data = pd.read_csv("sample_data/test_data.csv")
+print(data)
+print()
+print(suggest_fill_strategy(data))
+print()
+print(handle_missing_values(data))
 
 # Visualization
 

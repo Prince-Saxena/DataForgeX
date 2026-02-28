@@ -4,7 +4,6 @@ This document shows how **DataForgeX (DFX)** reduces long and repetitive
 data science code into **simple and readable one-liners**.
 ___
 
----
 
 # 🚀 Quick Start
 
@@ -547,20 +546,40 @@ Evaluation
 # 📁 Project Structure
 
 ```
-DataForgeX/
-│
+├── .github/
+│   └── workflows/
+│       └── publish.yml
+├── examples/
+│   └── test.py
+├── src/
+│   └── dfx/
+│       ├── cleaning/
+│       │   ├── __init__.py
+│       │   └── data_cleaning.py
+│       ├── data_viz/
+│       │   ├── __init__.py
+│       │   └── visualization.py
+│       ├── model_eval/
+│       │   ├── __init__.py
+│       │   ├── classification.py
+│       │   ├── regression.py
+│       │   └── utils.py
+│       ├── preprocessing/
+│       │   ├── __init__.py
+│       │   ├── autotype.py
+│       │   ├── encoding.py
+│       │   ├── outliers.py
+│       │   ├── pipeline.py
+│       │   └── scaling.py
+│       ├── utils/
+│       │   └── agent.py
+│       └── __init__.py
+├── .gitignore
+├── LICENSE
 ├── pyproject.toml
 ├── README.md
-├── LICENSE
-│
-└── src/
-    └── dfx/
-        ├── preprocessing.py
-        ├── encoding.py
-        ├── scaling.py
-        ├── outliers.py
-        ├── eda.py
-        └── evaluation.py
+└── requirment.txt
+
 ```
 
 ---
